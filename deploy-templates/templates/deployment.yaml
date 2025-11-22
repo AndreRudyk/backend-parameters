@@ -1,68 +1,96 @@
-apiVersion: apps/v1
 kind: Deployment
+apiVersion: apps/v1
 metadata:
-  name: {{ include "backend-parameters.fullname" . }}
+  name: backend-parameters
+  namespace: enc4ehiy-parameters-dev
+  uid: 2157c750-38b1-44a3-887e-fce6df4e025a
+  resourceVersion: '327326432'
+  generation: 6
+  creationTimestamp: '2025-11-22T13:37:01Z'
   labels:
-    {{- include "backend-parameters.labels" . | nindent 4 }}
+    app.kubernetes.io/instance: backend-parameters
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: backend-parameters
+    app.kubernetes.io/version: 0.1.0
+    helm.sh/chart: backend-parameters-0.1.0
+  annotations:
+    argocd.argoproj.io/tracking-id: enc4ehiy_parameters-dev-backend-parameters:apps/Deployment:enc4ehiy-parameters-dev/backend-parameters
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
-  {{- end }}
+  replicas: 1
   selector:
     matchLabels:
-      {{- include "backend-parameters.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/instance: backend-parameters
+      app.kubernetes.io/name: backend-parameters
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
-      annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       labels:
-        {{- include "backend-parameters.labels" . | nindent 8 }}
-        {{- with .Values.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        app.kubernetes.io/instance: backend-parameters
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: backend-parameters
+        app.kubernetes.io/version: 0.1.0
+        helm.sh/chart: backend-parameters-0.1.0
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      serviceAccountName: {{ include "backend-parameters.serviceAccountName" . }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: secret-extra-config
+            items:
+              - key: application.secret.properties
+                path: application.secret.properties
+        - name: configmap-volume
+          configMap:
+            name: cm-extra-config
+            items:
+              - key: application.properties
+                path: application.properties
       containers:
-        - name: {{ .Chart.Name }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        - name: backend-parameters
+          image: 183631338639.dkr.ecr.eu-central-1.amazonaws.com/enc4ehiy/backend-parameters:0.1.0-SNAPSHOT.2
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: 8080
               protocol: TCP
-          livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
-          readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          {{- with .Values.volumeMounts }}
+          envFrom:
+            - configMapRef:
+                name: cm-extra-env
+            - secretRef:
+                name: secret-extra-env
+          env:
+            - name: BACKEND_PROFILES_ACTIVE
+              value: dev
+            - name: ENV_VAR1
+              valueFrom:
+                configMapKeyRef:
+                  name: cm-extra-config
+                  key: ENV_VAR1
+            - name: ENV_VAR4
+              valueFrom:
+                secretKeyRef:
+                  name: secret-extra-config
+                  key: ENV_VAR4
           volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-      {{- with .Values.volumes }}
-      volumes:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+            - name: secret-volume
+              readOnly: true
+              mountPath: /secret-config
+            - name: configmap-volume
+              readOnly: true
+              mountPath: /config
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      serviceAccountName: backend-parameters
+      serviceAccount: backend-parameters
+      securityContext: {}
+      imagePullSecrets:
+        - name: regcred
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
