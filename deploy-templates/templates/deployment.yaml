@@ -2,11 +2,6 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: backend-parameters
-  namespace: enc4ehiy-parameters-dev
-  uid: 2157c750-38b1-44a3-887e-fce6df4e025a
-  resourceVersion: '327326432'
-  generation: 6
-  creationTimestamp: '2025-11-22T13:37:01Z'
   labels:
     app.kubernetes.io/instance: backend-parameters
     app.kubernetes.io/managed-by: Helm
