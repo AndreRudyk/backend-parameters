@@ -12,12 +12,11 @@ import java.util.Map;
 @RestController
 public class HelloEdpController {
 
-    @Value("${application.properties.from.configmap:}")
+    @Value("${application.properties.from.configmap:default-configmap-value}")
     private String configMapProperty;
 
-    @Value("${application.secret.properties.from.secret}")
+    @Value("${application.secret.properties.from.secret:default-secret-value}")
     private String secretProperty;
-
     @GetMapping(value = "/api/hello")
     public String hello() {
         return "Hello, EDP!";
