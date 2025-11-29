@@ -38,6 +38,12 @@ spec:
             items:
               - key: application.properties
                 path: application.properties
+        - name: ps-volume
+          secret:
+            secretName: backend-parameters
+            items:
+              - key: application.secret.properties.from.ps
+                path: application.secret.properties.from.ps
       containers:
         - name: backend-parameters
           image: 183631338639.dkr.ecr.eu-central-1.amazonaws.com/enc4ehiy/backend-parameters:0.1.0-SNAPSHOT.2
@@ -63,6 +69,11 @@ spec:
                 secretKeyRef:
                   name: secret-extra-config
                   key: ENV_VAR4
+            - name: ENV_VAR5
+              valueFrom:
+                secretKeyRef:
+                  name: backend-parameters
+                  key: ENV_VAR5
           volumeMounts:
             - name: secret-volume
               readOnly: true
@@ -70,6 +81,9 @@ spec:
             - name: configmap-volume
               readOnly: true
               mountPath: /config
+            - name: ps-volume
+              readOnly: true
+              mountPath: /ps-config
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           imagePullPolicy: IfNotPresent
